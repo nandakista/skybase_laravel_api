@@ -24,6 +24,7 @@ class Blog extends Model
     protected $fillable = [
         'title',
         'body',
+        'photo_path',
     ];
 
     // public $sortable = ['name',

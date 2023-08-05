@@ -11,6 +11,7 @@ use App\Helpers\ValidationHelper;
 use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class BlogController extends Controller
@@ -43,16 +44,18 @@ class BlogController extends Controller
             $validation = Validator::make(
                 request()->all(),
                 // [
-                //     'title' => $request->judul,
+                //     'title' => $request->title,
                 //     'body' => $request->body,
                 // ],
                 [
                     'title' => 'required',
                     'body' => 'required',
+                    'photo' => 'required|file|max:5024',
                 ],
                 // -------- If you want to custom message 
                 [
                     'title.required' => ':attribute tidak boleh kosong',
+                    'photo.max' => 'Maximum file size to upload is 5MB (:max)'
                     // 'same' => 'The :attribute and :other must match.',
                     // 'size' => 'The :attribute must be exactly :size.',
                     // 'between' => 'The :attribute value :input is not between :min - :max.',
@@ -76,14 +79,19 @@ class BlogController extends Controller
                 return ResponseFormatter::error(message: 'Failed to create Blog', error: $errors);
             }
 
-            $data = Blog::create($request->all());
+            // $data = Blog::create($request->all());
 
+
+            $photoFile = $request->file('photo');
+            $photoPath = Storage::putFile('photos', $photoFile);
+            $photoUrl = url(Storage::url($photoPath));
 
             // ---- Atau klo mau manipulate per field bisa gunain cara dibawah
-            // $data = Blog::create([
-            //     'title' => $request->judul,
-            //     'body' => $request->body,
-            // ]);
+            $data = Blog::create([
+                'title' => $request->title,
+                'body' => $request->body,
+                'photo_path' => $photoUrl,
+            ]);
 
             return ResponseFormatter::created($data);
         } catch (Exception $err) {
@@ -136,11 +144,14 @@ class BlogController extends Controller
                 [
                     'title' => 'required',
                     'body' => 'required',
+                    'photo' => 'required|image|max:5024',
                 ],
             );
+
             if ($validation->fails()) {
-                $errors = ValidationHelper::errMobile($validation->errors()->all());
-                return ResponseFormatter::error(message: 'Failed to update Blog', error: $errors);
+                throw new InvalidArgumentException($validation->errors());
+                // $errors = ValidationHelper::errMobile($validation->errors()->all());
+                // return ResponseFormatter::error(message: 'Failed to update Blog', error: $errors);
             }
 
             $data = Blog::find($id);
@@ -148,7 +159,20 @@ class BlogController extends Controller
                 return ResponseFormatter::error(error: 'Data doesn\'t exist', code: 404);
             }
 
-            $data->update($request->all());
+            // $data->update($request->all());
+
+
+            if ($data->photo_path != null) Storage::delete($data->photo_path);
+
+            $photoFile = $request->file('photo');
+            $photoPath = Storage::putFile('photos', $photoFile);
+            $photoUrl = url(Storage::url($photoPath));
+
+            $data->title = $request->title;
+            $data->body = $request->body;
+            $data->photo_path = $photoUrl;
+            $data->save();
+
             return ResponseFormatter::success(data: $data);
         } catch (Exception $err) {
             return ResponseFormatter::error(
@@ -168,8 +192,9 @@ class BlogController extends Controller
             if (!$data) {
                 return ResponseFormatter::error(error: 'Data doesn\'t exist', code: 404);
             }
+            if ($data->photo_path != null) Storage::disk('public')->delete($data->photo_path);
             $data->delete($id);
-            return ResponseFormatter::success(data: $data);
+            return ResponseFormatter::success(data: $data, message: "Successfully delete blog");
         } catch (Exception $err) {
             return ResponseFormatter::error(
                 error: json_decode($err->getMessage()),

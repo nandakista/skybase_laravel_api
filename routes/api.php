@@ -21,10 +21,11 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/blogs', [BlogController::class, 'index']) -> name('blogs.index');
-Route::get('/blogs/{blog}', [BlogController::class, 'show']) -> name('blogs.show');
+Route::get('/blogs/{id}', [BlogController::class, 'show']) -> name('blogs.show');
 Route::post('/blogs', [BlogController::class, 'store']) -> name('blogs.store');
-Route::put('/blogs/{blog}', [BlogController::class, 'update']) -> name('blogs.update');
-Route::delete('/blogs/{blog}', [BlogController::class, 'destroy']) -> name('blogs.destroy');
+Route::put('/blogs/{id}', [BlogController::class, 'update']) -> name('blogs.update');
+Route::post('/blogs/{id}', [BlogController::class, 'update']) -> name('blogs.update');
+Route::delete('/blogs/{id}', [BlogController::class, 'destroy']) -> name('blogs.destroy');
 
 
 // Atau bisa disingkat dengan code di bawah

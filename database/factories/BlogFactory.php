@@ -21,6 +21,8 @@ class BlogFactory extends Factory
         return [
             'title' => $this->faker->sentence(),
             'body' => $this->faker->text(),
+            'created_at' => $this->faker->date(),
+            'updated_at' => $this->faker->date(),
         ];
     }
 }
