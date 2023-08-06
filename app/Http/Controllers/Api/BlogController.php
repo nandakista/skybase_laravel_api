@@ -82,6 +82,7 @@ class BlogController extends Controller
             // $data = Blog::create($request->all());
 
 
+            // ---- Save photo
             $photoFile = $request->file('photo');
             $photoPath = Storage::putFile('photos', $photoFile);
             $photoUrl = url(Storage::url($photoPath));
@@ -97,7 +98,7 @@ class BlogController extends Controller
         } catch (Exception $err) {
             return ResponseFormatter::error(
                 message: 'Failed to create Blog',
-                error: json_decode($err->getMessage()),
+                error: json_decode($err->getMessage()) ?? $err->getMessage(),
                 code: 500,
             );
         }
@@ -127,7 +128,7 @@ class BlogController extends Controller
             return ResponseFormatter::success(data: $data);
         } catch (Exception $err) {
             return ResponseFormatter::error(
-                error: json_decode($err->getMessage()),
+                error: json_decode($err->getMessage()) ?? $err->getMessage(),
                 code: 500,
             );
         }
@@ -161,11 +162,15 @@ class BlogController extends Controller
 
             // $data->update($request->all());
 
+            // --- Delete old photo
+            $dirPath = 'photos';
+            $tmp = explode($dirPath, $data->photo_path);
+            $storagePath = $dirPath . end($tmp);
+            if ($data->photo_path != null) Storage::delete($storagePath);
 
-            if ($data->photo_path != null) Storage::delete($data->photo_path);
-
+            // --- Save new photo
             $photoFile = $request->file('photo');
-            $photoPath = Storage::putFile('photos', $photoFile);
+            $photoPath = Storage::putFile($dirPath, $photoFile);
             $photoUrl = url(Storage::url($photoPath));
 
             $data->title = $request->title;
@@ -176,7 +181,7 @@ class BlogController extends Controller
             return ResponseFormatter::success(data: $data);
         } catch (Exception $err) {
             return ResponseFormatter::error(
-                error: json_decode($err->getMessage()),
+                error: json_decode($err->getMessage()) ?? $err->getMessage(),
                 code: 500,
             );
         }
@@ -192,12 +197,18 @@ class BlogController extends Controller
             if (!$data) {
                 return ResponseFormatter::error(error: 'Data doesn\'t exist', code: 404);
             }
-            if ($data->photo_path != null) Storage::disk('public')->delete($data->photo_path);
+
+            // --- Delete photo
+            $dirPath = 'photos';
+            $tmp = explode($dirPath, $data->photo_path);
+            $storagePath = $dirPath . end($tmp);
+            if ($data->photo_path != null) Storage::delete($storagePath);
+            
             $data->delete($id);
             return ResponseFormatter::success(data: $data, message: "Successfully delete blog");
         } catch (Exception $err) {
             return ResponseFormatter::error(
-                error: json_decode($err->getMessage()),
+                error: json_decode($err->getMessage()) ?? $err->getMessage(),
                 code: 500,
             );
         }
