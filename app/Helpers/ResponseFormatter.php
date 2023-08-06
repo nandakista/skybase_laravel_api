@@ -52,13 +52,13 @@ class ResponseFormatter
         return response()->json($response, $code);
     }
 
-    public static function error($message = 'Failed', $code = 400, $error = [])
+    public static function error($error = [], $code = 400, $message = 'Failed')
     {
         $response = self::format(false, $message, $code, $error, []);
         return response()->json($response, $code);
     }
 
-    public static function unauthorized($message = 'Unauthorized', $code = 401, $error = [])
+    public static function unauthorized($error = [], $code = 401, $message = 'Unauthorized')
     {
         $response = self::format(false, $message, $code, $error, []);
         return response()->json($response, $code);
