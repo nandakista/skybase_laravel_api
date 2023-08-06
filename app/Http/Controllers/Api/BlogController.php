@@ -149,9 +149,9 @@ class BlogController extends Controller
             );
 
             if ($validation->fails()) {
-                throw new InvalidArgumentException($validation->errors());
-                // $errors = ValidationHelper::errMobile($validation->errors()->all());
-                // return ResponseFormatter::error(message: 'Failed to update Blog', error: $errors);
+                // throw new InvalidArgumentException($validation->errors());
+                $errors = ValidationHelper::errMobile($validation->errors()->all());
+                return ResponseFormatter::error(message: 'Failed to update Blog', error: $errors);
             }
 
             $data = Blog::find($id);
