@@ -23,25 +23,16 @@ class AuthController extends Controller
                 'password' => 'required',
             ]);
 
-
             $user = User::where('email', $request->email)->first();
-            if (is_null($user)) {
-                return ResponseFormatter::error(error: 'User doesn\'t exist', code: 404);
-            }
 
             if (!$user || !Hash::check($request->password, $user->password)) {
-                throw ValidationException::withMessages([
-                    'email' => ['The provided credentials are incorrect.'],
-                ]);
+                return ResponseFormatter::error(error: 'Email or password are incorrect', code: 400);
             }
 
-        
             $token = $user->createToken('session')->plainTextToken;
-
             $data['user'] = $user;
             $data['token'] = $token;
-
-        return ResponseFormatter::success(data: $data);
+            return ResponseFormatter::success(data: $data);
         } catch (Exception $err) {
             return ResponseFormatter::error(
                 error: json_decode($err->getMessage()) ?? $err->getMessage(),
@@ -53,33 +44,39 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        $validation = Validator::make(
-            request()->all(),
-            [
-                'name' => 'required',
-                'email' => 'required|email',
-                'password' => 'required',
-            ],
-        );
+        try {
+            $validation = Validator::make(
+                request()->all(),
+                [
+                    'name' => 'required',
+                    'email' => 'required|email|unique:users',
+                    'password' => 'required',
+                ],
+            );
 
-        if ($validation->fails()) {
-            $errors = ValidationHelper::errMobile($validation->errors()->all());
-            return ResponseFormatter::error(message: 'Failed to update Blog', error: $errors);
+            if ($validation->fails()) {
+                $errors = ValidationHelper::errMobile($validation->errors()->all());
+                return ResponseFormatter::error(message: 'Failed to Register', error: $errors);
+            }
+
+            $user = User::create([
+                'name'          => $request->name,
+                'email'         => $request->email,
+                'password'      => bcrypt($request->password),
+            ]);
+
+            // $user->assignRole('User');
+
+            $token = $user->createToken('session')->plainTextToken;
+            $data['user'] = $user;
+            $data['token'] = $token;
+
+            return ResponseFormatter::success(message: 'Registered Successfully', data: $data);
+        } catch (Exception $err) {
+            return ResponseFormatter::error(
+                error: json_decode($err->getMessage()) ?? $err->getMessage(),
+                code: 500,
+            );
         }
-
-        $user = User::create([
-            'name'          => $request->name,
-            'email'         => $request->email,
-            'password'      => bcrypt($request->password),
-        ]);
-
-        // $user->assignRole('User');
-
-        $token = $user->createToken('session')->plainTextToken;
-
-        $data['user'] = $user;
-        $data['token'] = $token;
-
-        return ResponseFormatter::success(message: 'Registered Successfully', data: $data);
     }
 }
