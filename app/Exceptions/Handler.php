@@ -2,10 +2,16 @@
 
 namespace App\Exceptions;
 
+use Error;
 use Throwable;
-use App\Helpers\ResponseFormatter;
+use BadMethodCallException;
+use App\Helpers\ResponseHelper;
 use Illuminate\Auth\AuthenticationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\ErrorHandler\Exception\FlattenException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -31,7 +37,47 @@ class Handler extends ExceptionHandler
 
         $this->renderable(function(AuthenticationException $e){
             if (request()->is('api/*')) {
-                return ResponseFormatter::unauthorized();
+                return ResponseHelper::unauthorized();
+            }
+        });
+
+        $this->renderable(function(NotFoundHttpException $e){
+            if (request()->is('api/*')) {
+                return ResponseHelper::error(
+                    code: 404, 
+                    message: 'Not found', 
+                    error: 'Not found'
+                );
+            }
+        });
+
+        $this->renderable(function(MethodNotAllowedHttpException $e) {
+            if (request()->is('api/*')) {
+                return ResponseHelper::error(
+                    code: 405, 
+                    message: 'Method Not Allowed', 
+                    error: 'Method Not Allowed'
+                );
+            }
+        });
+
+        $this->renderable(function(BadMethodCallException $e) {
+            if (request()->is('api/*')) {
+                return ResponseHelper::error(
+                    code: 500, 
+                    message: 'Internal Server Error', 
+                    error: 'Feature not implemented'
+                );
+            }
+        });
+
+        $this->renderable(function(Error $e) {
+            if (request()->is('api/*')) {
+                return ResponseHelper::error(
+                    code: 500, 
+                    message: 'Internal Server Error', 
+                    error: json_decode($e->getMessage()) ?? $e->getMessage(),
+                );
             }
         });
     }

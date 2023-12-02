@@ -1,9 +1,13 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BlogController;
+use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\ArticleController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\SubCategoryController;
 
 
 /*
@@ -25,13 +29,19 @@ Route::post('/auth/login', [AuthController::class, 'login']);
 Route::post('/auth/register', [AuthController::class, 'register']);
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
-    Route::get('/blogs', [BlogController::class, 'index'])->name('blogs.index');
-    Route::get('/blogs/{id}', [BlogController::class, 'show'])->name('blogs.show');
-    Route::post('/blogs', [BlogController::class, 'store'])->name('blogs.store');
-    Route::put('/blogs/{id}', [BlogController::class, 'update'])->name('blogs.update');
-    Route::post('/blogs/{id}', [BlogController::class, 'update'])->name('blogs.update');
-    Route::delete('/blogs/{id}', [BlogController::class, 'destroy'])->name('blogs.destroy');
-});
+    Route::prefix('user')->group(function () {
+        Route::get('/profile', [UserController::class, 'profile']);
+        Route::post('/profile/update', [UserController::class, 'updateProfile']);
+        Route::put('/change-password', [UserController::class, 'updatePassword']);
+        Route::delete('/delete-account', [UserController::class, 'deleteAccount']);
+    });
 
-// Atau bisa disingkat dengan code di bawah
-// Route::resource('blogs', BlogController::class);
+    Route::get('/article', [ArticleController::class, 'index']);
+    Route::get('/article/{id}', [ArticleController::class, 'detail']);
+    Route::put('/article/{id}', [ArticleController::class, 'update']);
+    Route::post('/article', [ArticleController::class, 'add']);
+    Route::delete('/article/{id}', [ArticleController::class, 'delete']);
+
+    Route::get('/category', [CategoryController::class, 'index']);
+    Route::get('/sub-category', [SubCategoryController::class, 'index']);
+});

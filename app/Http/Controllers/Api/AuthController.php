@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers\Api;
 
+use Exception;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Helpers\ResponseHelper;
+use Illuminate\Validation\Rule;
 use App\Helpers\ValidationHelper;
-use App\Helpers\ResponseFormatter;
 use App\Http\Controllers\Controller;
-use Exception;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -18,23 +19,35 @@ class AuthController extends Controller
     public function login(Request $request)
     {
         try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required',
+            $validation = Validator::make($request->all(), [
+                'username'  => 'required',
+                'password'  => 'required',
             ]);
 
-            $user = User::where('email', $request->email)->first();
-
-            if (!$user || !Hash::check($request->password, $user->password)) {
-                return ResponseFormatter::error(error: 'Email or password are incorrect', code: 400);
+            if ($validation->fails()) {
+                $errors = ValidationHelper::mobile($validation->errors()->all());
+                return ResponseHelper::error($errors);
             }
 
-            $token = $user->createToken('session')->plainTextToken;
+            $user = User::where('email', $request->username)
+                    ->orWhere('phone_number', $request->username)
+                    ->first();
+
+            if (!$user || !Hash::check($request->password, $user->password)) {
+                return ResponseHelper::error(
+                    message: 'Failed to Login',
+                    error: 'Username or password are incorrect', 
+                    code: 400,
+                );
+            }
+
             $data['user'] = $user;
-            $data['token'] = $token;
-            return ResponseFormatter::success(data: $data);
+            $data['token'] = $this->generateNewToken($user);
+            return ResponseHelper::success(data: $data);
+        } catch (QueryException $err) {
+            return ResponseHelper::error(message: $err->getMessage());
         } catch (Exception $err) {
-            return ResponseFormatter::error(
+            return ResponseHelper::error(
                 error: json_decode($err->getMessage()) ?? $err->getMessage(),
                 code: 500,
             );
@@ -46,34 +59,40 @@ class AuthController extends Controller
     {
         try {
             $validation = Validator::make(
-                request()->all(),
+                $request->all(),
                 [
-                    'name' => 'required',
-                    'email' => 'required|email|unique:users',
-                    'password' => 'required',
+                    'full_name' => 'required',
+                    'email' => ['required', 'email', Rule::unique('users')->whereNull('deleted_at')],
+                    'phone_number' => [
+                        'required',
+                        'string',
+                        'regex:/^(08)[1-9][0-9]{7,11}$/',
+                        Rule::unique('users')->whereNull('deleted_at'),
+                    ],
+                    'password' => 'required|string|min:8',
                 ],
             );
 
             if ($validation->fails()) {
-                $errors = ValidationHelper::errMobile($validation->errors()->all());
-                return ResponseFormatter::error(message: 'Failed to Register', error: $errors);
+                $errors = ValidationHelper::mobile($validation->errors()->all());
+                return ResponseHelper::error(message: 'Failed to Register', error: $errors);
             }
 
             $user = User::create([
-                'name'          => $request->name,
+                'full_name'     => $request->full_name,
                 'email'         => $request->email,
+                'phone_number'  => $request->phone_number,
                 'password'      => bcrypt($request->password),
             ]);
 
-            // $user->assignRole('User');
-
-            $token = $user->createToken('session')->plainTextToken;
             $data['user'] = $user;
-            $data['token'] = $token;
+            $data['token'] = $this->generateToken($user);
 
-            return ResponseFormatter::success(message: 'Registered Successfully', data: $data);
+            return ResponseHelper::success(message: 'Registered Successfully', data: $data);
+        } catch (QueryException $err) {
+            return ResponseHelper::error(message: $err->getMessage());
         } catch (Exception $err) {
-            return ResponseFormatter::error(
+            return ResponseHelper::error(
                 error: json_decode($err->getMessage()) ?? $err->getMessage(),
                 code: 500,
             );

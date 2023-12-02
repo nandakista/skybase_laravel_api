@@ -2,9 +2,9 @@
 
 namespace App\Helpers;
 
-class ResponseFormatter
+class ResponseHelper
 {
-    public static function format($status, $message, $code, $error, $data)
+    private static function format($status, $message, $code, $error, $data)
     {
         return [
             'success'   => $status,

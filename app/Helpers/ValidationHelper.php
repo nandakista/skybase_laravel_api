@@ -6,7 +6,7 @@ use InvalidArgumentException;
 
 class ValidationHelper
 {
-    public static function errMobile($data) 
+    public static function mobile($data) 
     {
         $errMessage = $data[0];
         return $errMessage;
