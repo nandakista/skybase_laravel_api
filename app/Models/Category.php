@@ -16,8 +16,8 @@ class Category extends Model
         'name',
     ];
 
-    // public function subCategory(): HasMany
-    // {
-    //     return $this->hasMany(SubCategory::class, 'category_id');
-    // }
+    public function subCategory(): HasMany
+    {
+        return $this->hasMany(SubCategory::class, 'category_id');
+    }
 }

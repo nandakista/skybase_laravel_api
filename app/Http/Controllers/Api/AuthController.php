@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use App\Helpers\ResponseHelper;
 use Illuminate\Validation\Rule;
 use App\Helpers\ValidationHelper;
+use App\Helpers\TranslationHelper;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -36,7 +37,10 @@ class AuthController extends Controller
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return ResponseHelper::error(
                     message: 'Failed to Login',
-                    error: 'Username or password are incorrect', 
+                    error: TranslationHelper::tr(
+                        id: 'Username atau password salah', 
+                        en: 'Username or password are incorrect',
+                    ), 
                     code: 400,
                 );
             }
