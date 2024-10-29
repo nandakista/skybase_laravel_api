@@ -146,7 +146,7 @@ class ArticleController extends Controller
             return ResponseHelper::error(message: $err->getMessage());
         }  catch (Exception $err) {
             return ResponseHelper::error(
-                message: 'Failed to delete account',
+                message: 'Failed to delete article',
                 error: json_decode($err->getMessage()) ?? $err->getMessage(),
                 code: 500,
             );
